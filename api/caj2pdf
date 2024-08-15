@@ -42,6 +42,7 @@ if __name__ == "__main__":
 
     if args.command == "convert":
         caj = CAJParser(args.input)
+        print("Converting {0} to {1}...".format(args.input, args.output))
         if args.output is None:
             if args.input.endswith(".caj"):
                 args.output = args.input.replace(".caj", ".pdf")
@@ -49,6 +50,7 @@ if __name__ == "__main__":
                 args.output = os.path.splitext(args.input)[0] + ".pdf"
             else:
                 args.output = args.input + ".pdf"
+        print("Output file: {0}".format(args.output))
         caj.convert(args.output)
 
     if args.command == "outlines":
