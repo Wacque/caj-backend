@@ -5,7 +5,7 @@ from subprocess import check_output, STDOUT, CalledProcessError
 
 from pymupdf import Document
 
-from utils import fnd, fnd_all, add_outlines, fnd_rvrs, fnd_unuse_no, find_redundant_images
+from api.utils import fnd_all, fnd_rvrs, fnd, fnd_unuse_no, add_outlines, find_redundant_images
 
 try:
     from PyPDF2 import errors
