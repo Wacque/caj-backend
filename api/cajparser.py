@@ -5,6 +5,7 @@ from subprocess import check_output, STDOUT, CalledProcessError
 
 from pymupdf import Document
 
+from api.config import FILE_WRITE_PATH
 from api.utils import fnd_all, fnd_rvrs, fnd, fnd_unuse_no, add_outlines, find_redundant_images
 
 try:
@@ -22,7 +23,6 @@ image_type = {
     2: "JPEG",  # up-side-down
     3: "JBIG2"
 }
-
 
 class CAJParser(object):
     def __init__(self, filename):
@@ -156,7 +156,7 @@ class CAJParser(object):
         doc = Document(input_path)
 
         # 保存文档到新路径，同时进行修复和清理
-        doc.save(output_path, garbage=4)  # garbage=4 选项会清理未使用的对象和压缩PDF
+        doc.save(FILE_WRITE_PATH + output_path, garbage=4)  # garbage=4 选项会清理未使用的对象和压缩PDF
 
         # 关闭文档
         doc.close()
@@ -646,15 +646,15 @@ class CAJParser(object):
         output = output[:eofpos + 5]
 
         #  Write output file.
-        fp = open(dest + ".tmp", "wb")
+        fp = open(FILE_WRITE_PATH + dest + ".tmp", "wb")
         fp.write(output)
         fp.close()
 
         # Use mutool to repair xref
         try:
-            self.repair_pdf( dest + ".tmp", dest)
+            self.repair_pdf(FILE_WRITE_PATH + dest + ".tmp", dest)
         except CalledProcessError as e:
             print(e.output.decode("utf-8"))
             raise e
 
-        os.remove(dest + ".tmp")
+        os.remove(FILE_WRITE_PATH + dest + ".tmp")
