@@ -14,14 +14,15 @@ except ImportError:
 
 KDH_PASSPHRASE = b"FZHMEI"
 
-printables = ''.join([(len(repr(chr(x)))==3) and (x != 47) and (x < 128) and chr(x) or '.' for x in range(256)])
+printables = ''.join([(len(repr(chr(x))) == 3) and (x != 47) and (x < 128) and chr(x) or '.' for x in range(256)])
 
 image_type = {
-    0 : "JBIG",
-    1 : "JPEG",
-    2 : "JPEG", # up-side-down
-    3 : "JBIG2"
-    }
+    0: "JBIG",
+    1: "JPEG",
+    2: "JPEG",  # up-side-down
+    3: "JBIG2"
+}
+
 
 class CAJParser(object):
     def __init__(self, filename):
@@ -32,12 +33,12 @@ class CAJParser(object):
                 if (caj_read4[0:1] == b'\xc8'):
                     self.format = "C8"
                     self._PAGE_NUMBER_OFFSET = 0x08
-                    self._TOC_NUMBER_OFFSET = 0 # No TOC
+                    self._TOC_NUMBER_OFFSET = 0  # No TOC
                     self._TOC_END_OFFSET = 0x50
                     self._PAGEDATA_OFFSET = self._TOC_END_OFFSET + 20 * self.page_num
                     return
                 if (caj_read4[0:2] == b'HN'):
-                    if (caj.read(2) == b'\xc8\x00'): # Most of them are: 90 01, handled later
+                    if (caj.read(2) == b'\xc8\x00'):  # Most of them are: 90 01, handled later
                         self.format = "HN"
                         self._PAGE_NUMBER_OFFSET = 0x90
                         self._TOC_NUMBER_OFFSET = 0
@@ -100,10 +101,10 @@ class CAJParser(object):
                 page = int(toc_bytes[2][0:pg_end])
                 level = toc_bytes[4]
                 toc_entry = {"title": title, "page": page, "level": level}
-                if ( verbose ):
-                    print("   " * (level -1), title.decode("utf-8"))
+                if (verbose):
+                    print("   " * (level - 1), title.decode("utf-8"))
                 toc.append(toc_entry)
-            if ( verbose ):
+            if (verbose):
                 print("TOC END: 0x%04X" % (self._TOC_NUMBER_OFFSET + 4 + 0x134 * self.toc_num))
         return toc
 
@@ -302,7 +303,7 @@ class CAJParser(object):
 
         # Use mutool to repair xref
         try:
-            self.repair_pdf("pdf.tmp",  "pdf_toc.pdf")
+            self.repair_pdf("pdf.tmp", "pdf_toc.pdf")
             # check_output(["mutool", "clean", "pdf.tmp", "pdf_toc.pdf"], stderr=STDOUT)
         except CalledProcessError as e:
             print(e.output.decode("utf-8"))
@@ -327,14 +328,15 @@ class CAJParser(object):
 
         for i in range(self.page_num):
             caj.seek(self._TOC_END_OFFSET + i * 20)
-            [page_data_offset, size_of_text_section, images_per_page, page_no, unk2, next_page_data_offset] = struct.unpack("iihhii", caj.read(20))
+            [page_data_offset, size_of_text_section, images_per_page, page_no, unk2,
+             next_page_data_offset] = struct.unpack("iihhii", caj.read(20))
             caj.seek(page_data_offset)
             text_header_read32 = caj.read(32)
             if ((text_header_read32[8:20] == b'COMPRESSTEXT') or (text_header_read32[0:12] == b'COMPRESSTEXT')):
                 coff = 8
                 if (text_header_read32[0:12] == b'COMPRESSTEXT'):
                     coff = 0
-                [expanded_text_size] = struct.unpack("i", text_header_read32[12+coff:16+coff])
+                [expanded_text_size] = struct.unpack("i", text_header_read32[12 + coff:16 + coff])
                 import zlib
                 caj.seek(page_data_offset + 16 + coff)
                 data = caj.read(size_of_text_section - 16 - coff)
@@ -351,7 +353,7 @@ class CAJParser(object):
             current_offset = page_data_offset + size_of_text_section
             (found, images_per_page) = find_redundant_images(caj, current_offset, images_per_page)
             if (found):
-                print("Page %d, skipping %d redundant images" % (i+1, images_per_page * ( images_per_page - 1)))
+                print("Page %d, skipping %d redundant images" % (i + 1, images_per_page * (images_per_page - 1)))
 
             if (images_per_page > 1):
                 if (len(page_data.figures) == images_per_page):
@@ -360,20 +362,20 @@ class CAJParser(object):
                         image_list.append(page_data.figures)
                     else:
                         print("Page %d, Image Count %d, first image not at origin, expanding to %d pages"
-                              % (i+1, len(page_data.figures), images_per_page))
+                              % (i + 1, len(page_data.figures), images_per_page))
                 else:
-                    print("Page %d, Image Count %d != %d" % (i+1, len(page_data.figures), images_per_page))
+                    print("Page %d, Image Count %d != %d" % (i + 1, len(page_data.figures), images_per_page))
                     if (len(page_data.figures) > images_per_page):
-                        print("\tTruncating Page %d," % (i+1), page_data.figures)
+                        print("\tTruncating Page %d," % (i + 1), page_data.figures)
                         image_list.append(None)
                         image_list.append(page_data.figures[0:images_per_page])
                     else:
-                        print("Page %d expanding to %d separate image pages" % (i+1, images_per_page))
+                        print("Page %d expanding to %d separate image pages" % (i + 1, images_per_page))
             elif (images_per_page == 1):
                 if ((len(page_data.figures) == 0) or
-                    ((len(page_data.figures) > 0) and
-                    (not ((page_data.figures[0][0] == 0) and (page_data.figures[0][1] == 0))))):
-                    print("Page %d possibly text-only + single figure(%d)" % (i+1, len(page_data.figures)))
+                        ((len(page_data.figures) > 0) and
+                         (not ((page_data.figures[0][0] == 0) and (page_data.figures[0][1] == 0))))):
+                    print("Page %d possibly text-only + single figure(%d)" % (i + 1, len(page_data.figures)))
             else:
                 # don't care about images_per_page == 0
                 pass
@@ -393,7 +395,7 @@ class CAJParser(object):
                     # PBM is only padded to 8 rather than 32.
                     # If the padding is larger, write padded file.
                     width = cimage.width
-                    if (cimage.bytes_per_line > ((cimage.width +7) >> 3)):
+                    if (cimage.bytes_per_line > ((cimage.width + 7) >> 3)):
                         width = cimage.bytes_per_line << 3
                     image_item = (
                         Colorspace.P,
@@ -414,7 +416,7 @@ class CAJParser(object):
                     # PBM is only padded to 8 rather than 32.
                     # If the padding is larger, write padded file.
                     width = cimage.width
-                    if (cimage.bytes_per_line > ((cimage.width +7) >> 3)):
+                    if (cimage.bytes_per_line > ((cimage.width + 7) >> 3)):
                         width = cimage.bytes_per_line << 3
                     image_item = (
                         Colorspace.P,
@@ -432,10 +434,13 @@ class CAJParser(object):
                     colorspace = Colorspace.RGB
                     component = 3
                     # stock libjpeg location
-                    (SOFn, frame_length, bits_per_pixel, height, width, component) = struct.unpack(">HHBHHB", image_data[158:168])
+                    (SOFn, frame_length, bits_per_pixel, height, width, component) = struct.unpack(">HHBHHB",
+                                                                                                   image_data[158:168])
                     if (SOFn != 0xFFC0):
                         # "Intel(R) JPEG Library" location
-                        (SOFn, frame_length, bits_per_pixel, height, width, component) = struct.unpack(">HHBHHB", image_data[0x272:0x27c])
+                        (SOFn, frame_length, bits_per_pixel, height, width, component) = struct.unpack(">HHBHHB",
+                                                                                                       image_data[
+                                                                                                       0x272:0x27c])
                         if (SOFn != 0xFFC0):
                             # neither works, try brute-force
                             import imagesize
@@ -483,14 +488,15 @@ class CAJParser(object):
 
         for i in range(self.page_num):
             caj.seek(self._TOC_END_OFFSET + i * 20)
-            [page_data_offset, size_of_text_section, images_per_page, page_no, unk2, next_page_data_offset] = struct.unpack("iihhii", caj.read(20))
+            [page_data_offset, size_of_text_section, images_per_page, page_no, unk2,
+             next_page_data_offset] = struct.unpack("iihhii", caj.read(20))
             caj.seek(page_data_offset)
             text_header_read32 = caj.read(32)
             if ((text_header_read32[8:20] == b'COMPRESSTEXT') or (text_header_read32[0:12] == b'COMPRESSTEXT')):
                 coff = 8
                 if (text_header_read32[0:12] == b'COMPRESSTEXT'):
                     coff = 0
-                [expanded_text_size] = struct.unpack("i", text_header_read32[12+coff:16+coff])
+                [expanded_text_size] = struct.unpack("i", text_header_read32[12 + coff:16 + coff])
                 import zlib
                 caj.seek(page_data_offset + 16 + coff)
                 data = caj.read(size_of_text_section - 16 - coff)
@@ -503,9 +509,9 @@ class CAJParser(object):
             from HNParsePage import HNParsePage
             page_style = (next_page_data_offset > page_data_offset)
             page_data = HNParsePage(output, page_style)
-            print("Text on Page %d:" % (i+1))
+            print("Text on Page %d:" % (i + 1))
             print(page_data.texts)
-            #print("Figures:\n", page_data.figures)
+            # print("Figures:\n", page_data.figures)
 
     def _parse_hn(self):
         if (self._TOC_NUMBER_OFFSET > 0):
@@ -514,8 +520,9 @@ class CAJParser(object):
 
         for i in range(self.page_num):
             caj.seek(self._TOC_END_OFFSET + i * 20)
-            print("Reading Page Info struct #%d at offset 0x%04X" % (i+1, self._TOC_END_OFFSET + i * 20))
-            [page_data_offset, size_of_text_section, images_per_page, page_no, unk2, next_page_data_offset] = struct.unpack("iihhii", caj.read(20))
+            print("Reading Page Info struct #%d at offset 0x%04X" % (i + 1, self._TOC_END_OFFSET + i * 20))
+            [page_data_offset, size_of_text_section, images_per_page, page_no, unk2,
+             next_page_data_offset] = struct.unpack("iihhii", caj.read(20))
             print("unknown page struct members = (%d %d)" % (unk2, next_page_data_offset))
             # All 71: 1,0,0
             print("Page Number %d Data offset = 0x%04X" % (page_no, page_data_offset))
@@ -530,7 +537,7 @@ class CAJParser(object):
                 if (text_header_read32[0:12] == b'COMPRESSTEXT'):
                     coff = 0
                 # expanded_text_size seems to be always about 2-3 times size_of_text_section, so this is a guess.
-                [expanded_text_size] = struct.unpack("i", text_header_read32[12+coff:16+coff])
+                [expanded_text_size] = struct.unpack("i", text_header_read32[12 + coff:16 + coff])
                 import zlib
                 caj.seek(page_data_offset + 16 + coff)
                 data = caj.read(size_of_text_section - 16 - coff)
@@ -540,9 +547,9 @@ class CAJParser(object):
                 print("Page Text Header COMPRESSTEXT:\n", self.dump(output, GB=True), sep="")
                 for x in range(len(output) >> 4):
                     try:
-                        print(bytes([output[(x << 4) + 7],output[(x << 4) + 6]]).decode("gbk"), end="")
+                        print(bytes([output[(x << 4) + 7], output[(x << 4) + 6]]).decode("gbk"), end="")
                     except UnicodeDecodeError:
-                        print(self.dump(output[x << 4:(x+1) << 4]))
+                        print(self.dump(output[x << 4:(x + 1) << 4]))
                 print()
             else:
                 caj.seek(page_data_offset)
@@ -564,13 +571,13 @@ class CAJParser(object):
                 if (offset_to_image_data != current_offset + 12):
                     raise SystemExit("unusual image offset")
                 print("Page Image Header dump:\n", self.dump(read32), sep="")
-                print("Expected End of Page #%d: 0x%08X" % (i+1, current_offset + size_of_image_data + 12))
+                print("Expected End of Page #%d: 0x%08X" % (i + 1, current_offset + size_of_image_data + 12))
                 caj.seek(offset_to_image_data)
                 image_data = caj.read(size_of_image_data)
                 current_offset = offset_to_image_data + size_of_image_data
-                image_name = "image_dump_%04d" % (i+1)
+                image_name = "image_dump_%04d" % (i + 1)
                 if (j > 0):
-                    image_name = "image_dump_%04d_%04d" % (i+1, j)
+                    image_name = "image_dump_%04d_%04d" % (i + 1, j)
                 with open(image_name + ".dat", "wb") as f:
                     f.write(image_data)
                 if (image_type[image_type_enum] == "JBIG"):
@@ -591,27 +598,26 @@ class CAJParser(object):
         print("end 0x%08x" % self._PAGEDATA_OFFSET)
 
     def dump(self, src, GB=False):
-        N=0
-        result=[]
+        N = 0
+        result = []
         while src:
-            s,src = src[:16],src[16:]
-            hexa = ' '.join(["%02X"% x for x in s])
+            s, src = src[:16], src[16:]
+            hexa = ' '.join(["%02X" % x for x in s])
             gb = ""
             if (GB):
                 gb += "    "
                 for x in range(len(s) >> 1):
                     try:
-                        if (s[(x << 1) +1] < 128 and s[(x << 1) + 0] < 128):
+                        if (s[(x << 1) + 1] < 128 and s[(x << 1) + 0] < 128):
                             gb += ".."
                         else:
-                            gb += bytes([s[(x << 1) + 1],s[(x << 1) + 0]]).decode("gbk")
+                            gb += bytes([s[(x << 1) + 1], s[(x << 1) + 0]]).decode("gbk")
                     except UnicodeDecodeError:
                         gb += ".."
             s = ''.join(printables[x] for x in s)
-            result += "%04X   %-*s   %s%s\n" % (N, 16*3, hexa, s, gb)
-            N+=16
+            result += "%04X   %-*s   %s%s\n" % (N, 16 * 3, hexa, s, gb)
+            N += 16
         return ''.join(result)
-
 
     def _convert_pdf(self, dest):
         copy(self.filename, dest)
@@ -646,10 +652,9 @@ class CAJParser(object):
 
         # Use mutool to repair xref
         try:
-            # check_output(["mutool", "clean", dest + ".tmp", dest], stderr=STDOUT)
-            self.repair_pdf(dest + ".tmp", dest)
+            self.repair_pdf( dest + ".tmp", dest)
         except CalledProcessError as e:
             print(e.output.decode("utf-8"))
-            raise SystemExit("Command mutool returned non-zero exit status " + str(e.returncode))
+            raise e
 
         os.remove(dest + ".tmp")
