@@ -13,7 +13,7 @@
 
 ## 概述
 
-本项目是原始 [caj2pdf](https://github.com/caj2pdf/caj2pdf) 项目的分支和增强版本，旨在将 CAJ 文件（中国知网使用的专有格式）转换为 PDF 格式，同时保留文本可选中性和文档大纲。
+本项目是原始 [caj2pdf](https://github.com/caj2pdf/caj2pdf) 项目的分支和增强版本，旨在将 CAJ 文件（中国知网使用的专有格式）转换为 PDF 格式。
 
 ## 主要特性
 
